@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      PORT: "5101"
     ports:
       - "5101:5101"
     restart: unless-stopped
