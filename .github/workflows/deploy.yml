@@ -1,0 +1,34 @@
+name: Deploy to film-test (main)
+
+on:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repo into workspace
+        uses: actions/checkout@v4
+
+      - name: Sync code to /srv/sandbox/app
+        shell: bash
+        run: |
+          set -e
+          rsync -a --delete ./ /srv/sandbox/app/
+
+      - name: Deploy with Docker Compose (if exists)
+        shell: bash
+        run: |
+          set -e
+          cd /srv/sandbox/app
+          if [ -f docker-compose.yml ]; then
+            docker compose up -d --build
+            docker ps
+          else
+            echo "docker-compose.yml not found yet — skipping docker deploy"
+          fi
