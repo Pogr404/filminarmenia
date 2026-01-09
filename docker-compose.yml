@@ -1,10 +1,35 @@
+name: film
+
 services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       PORT: "5101"
+      NODE_ENV: production
+      DATABASE_URL: postgres://app:${POSTGRES_PASSWORD}@db:5432/app
     ports:
       - "5101:5101"
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  pgdata:
