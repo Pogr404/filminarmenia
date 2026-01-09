@@ -2,17 +2,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN cat > server.js <<'EOF'
-const http = require('http');
+COPY server.js ./server.js
 
-const port = process.env.PORT || 5101;
-
-http.createServer((req, res) => {
-  res.end('OK');
-}).listen(port, '0.0.0.0', () => {
-  console.log('listening', port);
-});
-EOF
-
+ENV NODE_ENV=production
 EXPOSE 5101
+
 CMD ["node", "server.js"]
