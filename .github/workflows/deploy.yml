@@ -1,42 +1,38 @@
-name: Deploy to film-test (main)
+name: Deploy to film-test
 
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 concurrency:
-  group: deploy-main
+  group: film-deploy
   cancel-in-progress: true
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, x64]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Sync code to /srv/sandbox/app (keep server .env)
-        shell: bash
         run: |
-          set -euo pipefail
           rsync -a --delete \
             --exclude '.env' \
+            --exclude 'node_modules/' \
+            --exclude '.git/' \
             ./ /srv/sandbox/app/
 
-      - name: Ensure Postgres is up
-        shell: bash
+      - name: Ensure Postgres is up (persistent volume)
+        working-directory: /srv/sandbox/app
         run: |
-          set -euo pipefail
-          cd /srv/sandbox/app
-          docker compose up -d db
-          docker compose ps
+          docker compose -p film --env-file .env up -d db
+          docker compose -p film ps
 
       - name: Deploy app only (do not restart db)
-        shell: bash
-        env:
-          COMPOSE_BAKE: "false"
+        working-directory: /srv/sandbox/app
         run: |
-          set -euo pipefail
-          cd /srv/sandbox/app
-          docker compose up -d --build --no-deps app
-          docker compose ps
+          docker compose -p film --env-file .env up -d --build --no-deps app
+          docker compose -p film ps
