@@ -12,23 +12,31 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - name: Checkout repo into workspace
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Sync code to /srv/sandbox/app
+      - name: Sync code to /srv/sandbox/app (keep server .env)
         shell: bash
         run: |
-          set -e
-          rsync -a --delete ./ /srv/sandbox/app/
+          set -euo pipefail
+          rsync -a --delete \
+            --exclude '.env' \
+            ./ /srv/sandbox/app/
 
-      - name: Deploy with Docker Compose (if exists)
+      - name: Ensure Postgres is up
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
           cd /srv/sandbox/app
-          if [ -f docker-compose.yml ]; then
-            docker compose up -d --build
-            docker ps
-          else
-            echo "docker-compose.yml not found yet — skipping docker deploy"
-          fi
+          docker compose up -d db
+          docker compose ps
+
+      - name: Deploy app only (do not restart db)
+        shell: bash
+        env:
+          COMPOSE_BAKE: "false"
+        run: |
+          set -euo pipefail
+          cd /srv/sandbox/app
+          docker compose up -d --build --no-deps app
+          docker compose ps
