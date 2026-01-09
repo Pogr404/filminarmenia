@@ -3,6 +3,7 @@ name: film
 services:
   db:
     image: postgres:16
+    env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -20,12 +21,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file: .env
     environment:
       PORT: "5101"
       NODE_ENV: production
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     ports:
-      - "5101:5101"
+      - "${API_PORT:-5101}:5101"
     depends_on:
       db:
         condition: service_healthy
