@@ -17,22 +17,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Sync code to /srv/sandbox/app (keep server .env)
+      - name: Sync code to server (keep .env)
+        shell: bash
         run: |
+          set -euo pipefail
           rsync -a --delete \
             --exclude '.env' \
-            --exclude 'node_modules/' \
             --exclude '.git/' \
+            --exclude 'node_modules/' \
             ./ /srv/sandbox/app/
 
-      - name: Ensure Postgres is up (persistent volume)
-        working-directory: /srv/sandbox/app
+      - name: Ensure db is up
+        shell: bash
         run: |
+          set -euo pipefail
+          cd /srv/sandbox/app
           docker compose -p film --env-file .env up -d db
-          docker compose -p film ps
+          docker compose -p film --env-file .env ps
 
       - name: Deploy app only (do not restart db)
-        working-directory: /srv/sandbox/app
+        shell: bash
+        env:
+          COMPOSE_BAKE: "false"
         run: |
+          set -euo pipefail
+          cd /srv/sandbox/app
           docker compose -p film --env-file .env up -d --build --no-deps app
-          docker compose -p film ps
+          docker compose -p film --env-file .env ps
+          curl -fsS http://127.0.0.1:5101 >/dev/null
