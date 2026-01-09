@@ -22,10 +22,12 @@ jobs:
         run: |
           set -euo pipefail
           rsync -a --delete \
+            --no-owner --no-group \
             --exclude '.env' \
             --exclude '.git/' \
             --exclude 'node_modules/' \
             ./ /srv/sandbox/app/
+
 
       - name: Ensure db is up
         shell: bash
