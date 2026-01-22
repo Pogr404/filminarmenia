@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  frontend:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+  backend:
+    image: node:18-alpine
+    working_dir: /app
+    command: ["node", "-e", "console.log('Backend ready') && setInterval(() => {}, 1000)"]
+    ports:
+      - "${API_PORT}:5101"
+    env_file: .env
+  db:
+    image: postgres:16
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file: .env
+volumes:
+  postgres_data:
